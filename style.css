@@ -147,6 +147,21 @@ h3,h5{
     margin-top: 1.8em;
     color: #202030;
 }
+.footer p{
+   margin-top: 5em;
+   text-align: center;
+   color: #5050ff; 
+}
+
+.footer p a{
+    text-decoration: none;
+    font-weight: 900px;
+    color: black;
+}
+
+.footer p a:hover{
+    color: #5050ff;
+}
 
 @media screen and (max-width: 500px) {
     .container{
