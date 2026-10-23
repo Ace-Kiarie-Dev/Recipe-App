@@ -3,28 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recipe App</title>
+    <title>Mise — a pocket cookbook</title>
+    <meta name="description" content="Find a recipe by dish or by what's in your fridge, scale it, build a shopping list and cook hands-free with built-in timers.">
+    <meta name="theme-color" content="#F4EEE2">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🍳</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..800,0..100;1,9..144,300..800,0..100&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script>try{var t=JSON.parse(localStorage.getItem('mise:theme'));if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
 <body>
-    <!--Initial Body Container-->
-   <div class="container">
-    <div class="search-container">
-        <input type="text" placeholder="Input Dish Name..." id="user-inp">
-        <button id="search-btn">Find Recipe!</button>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <!-- Top bar -->
+    <header class="topbar">
+        <div class="wrap topbar-inner">
+            <a class="brand" href="#/" aria-label="Mise home">Mise<span>.</span></a>
+            <nav class="nav" aria-label="Primary">
+                <a href="#/" data-nav="discover">Discover</a>
+                <a href="#/cookbook" data-nav="cookbook">Cookbook <span class="count" id="fav-count">0</span></a>
+                <button class="nav-btn" id="open-list" type="button">List <span class="count" id="list-count">0</span></button>
+                <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle dark mode" data-icon="contrast"></button>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main">
+        <!-- Discover view -->
+        <div id="view-discover">
+            <section class="hero wrap">
+                <p class="eyebrow"><span class="dot"></span> Vol. 01 &mdash; <span id="today"></span></p>
+                <h1>What are we <em>cooking</em> tonight?</h1>
+
+                <div class="modes" role="tablist" aria-label="Search mode">
+                    <button role="tab" type="button" aria-selected="true" data-mode="dish">By dish</button>
+                    <button role="tab" type="button" aria-selected="false" data-mode="fridge">What's in my fridge</button>
+                </div>
+
+                <form id="search-form" class="search" autocomplete="off">
+                    <div class="search-field">
+                        <span data-icon="search" class="search-ico"></span>
+                        <div class="chips" id="fridge-chips"></div>
+                        <input id="search-input" type="text" aria-label="Search recipes" placeholder="Search a dish — try “laksa”">
+                        <kbd>/</kbd>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Find</button>
+                    <button type="button" class="btn btn-ghost" id="surprise" data-icon="dice">Surprise me</button>
+                </form>
+                <datalist id="ing-options"></datalist>
+                <p class="hint" id="search-hint"></p>
+            </section>
+
+            <section class="wrap" aria-label="Chef's pick">
+                <div id="featured" class="feature is-loading"></div>
+            </section>
+
+            <section class="wrap browse" aria-labelledby="browse-h">
+                <div class="browse-head">
+                    <h2 id="browse-h" class="section-title">Browse the pantry</h2>
+                    <label class="select">
+                        <span>Cuisine</span>
+                        <select id="area-select"><option value="">Anywhere</option></select>
+                    </label>
+                </div>
+                <div class="cats" id="categories" role="group" aria-label="Categories"></div>
+            </section>
+
+            <section class="wrap results" id="results" aria-live="polite">
+                <div class="results-head">
+                    <h2 id="results-title" class="results-title"></h2>
+                    <p id="results-meta" class="results-meta"></p>
+                </div>
+                <div class="grid" id="grid"></div>
+            </section>
+        </div>
+
+        <!-- Cookbook view -->
+        <div id="view-cookbook" hidden>
+            <section class="hero hero-sm wrap">
+                <p class="eyebrow"><span class="dot"></span> Saved on this device</p>
+                <h1>Your <em>cookbook</em></h1>
+                <p class="results-meta" id="fav-meta"></p>
+            </section>
+            <section class="wrap results">
+                <div class="grid" id="fav-grid"></div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer wrap">
+        <p class="brand brand-sm">Mise<span>.</span></p>
+        <p>Made by <a href="https://nesturex.com" target="_blank" rel="noopener noreferrer">Peter Kiarie</a>. Recipes from <a href="https://www.themealdb.com" target="_blank" rel="noopener noreferrer">TheMealDB</a>.</p>
+    </footer>
+
+    <!-- Recipe sheet -->
+    <div class="layer sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden>
+        <div class="layer-backdrop" data-dismiss></div>
+        <div class="sheet-panel">
+            <button class="icon-btn sheet-close" type="button" data-dismiss aria-label="Close recipe" data-icon="close"></button>
+            <div class="sheet-scroll" id="sheet-body"></div>
+        </div>
     </div>
 
-       <!--Results Container-->
-   <div id="results"></div>
-
-    <!-- Footer -->
-
-    <div class="footer">
-       <p>This Recipe App was made by <a href="http://www.peterkiarie.com" target="_blank" rel="noopener noreferrer"> <strong>Peter Kiarie</strong> </a> using the free meal API.</p> 
+    <!-- Shopping list drawer -->
+    <div class="layer drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+        <div class="layer-backdrop" data-dismiss></div>
+        <div class="drawer-panel">
+            <header class="drawer-head">
+                <div>
+                    <p class="eyebrow">For the market</p>
+                    <h2 id="drawer-title">Shopping list</h2>
+                </div>
+                <button class="icon-btn" type="button" data-dismiss aria-label="Close shopping list" data-icon="close"></button>
+            </header>
+            <div class="drawer-body" id="list-body"></div>
+            <footer class="drawer-foot">
+                <button class="btn btn-primary" type="button" id="list-copy" data-icon="copy">Copy list</button>
+                <button class="btn btn-ghost" type="button" id="list-clear-done">Clear ticked</button>
+                <button class="btn btn-text" type="button" id="list-clear">Clear all</button>
+            </footer>
+        </div>
     </div>
-   </div>
 
+    <!-- Cook mode -->
+    <div class="layer cook" id="cook" role="dialog" aria-modal="true" aria-labelledby="cook-title" hidden>
+        <header class="cook-top wrap">
+            <div>
+                <p class="eyebrow"><span class="dot"></span> Cook mode <span id="cook-awake"></span></p>
+                <h2 id="cook-title"></h2>
+            </div>
+            <button class="icon-btn" type="button" data-dismiss aria-label="Exit cook mode" data-icon="close"></button>
+        </header>
+        <div class="cook-progress" aria-hidden="true"><span id="cook-bar"></span></div>
+        <div class="cook-stage wrap" id="cook-stage">
+            <p class="cook-count" id="cook-count"></p>
+            <p class="cook-text" id="cook-text" aria-live="polite"></p>
+            <div class="cook-gather" id="cook-gather"></div>
+        </div>
+        <footer class="cook-nav wrap">
+            <button class="btn btn-ghost" type="button" id="cook-prev" data-icon="arrowL">Back</button>
+            <p class="cook-tip">← → keys or swipe</p>
+            <button class="btn btn-primary" type="button" id="cook-next">Next</button>
+        </footer>
+    </div>
 
+    <div class="timers" id="timers" aria-live="polite"></div>
+    <div class="toast" id="toast" role="status"></div>
 
     <script src="./main.js"></script>
 </body>
